@@ -21,7 +21,7 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            kmb32123/youtube-dl-server
+            kalioz/youtube-dl-server
           tags: |
             type=ref,event=branch
             type=ref,event=pr
