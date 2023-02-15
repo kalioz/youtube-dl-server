@@ -16,7 +16,7 @@ Very spartan Web and REST interface for downloading youtube videos onto a server
 This example uses the docker run command to create the container to run the app. Here we also use host networking for simplicity. Also note the `-v` argument. This directory will be used to output the resulting videos
 
 ```shell
-docker run -d --net="host" --name youtube-dl -v /home/core/youtube-dl:/youtube-dl kmb32123/youtube-dl-server
+docker run -d --net="host" --name youtube-dl -v /home/core/youtube-dl:/youtube-dl kalioz/youtube-dl-server:2.1.1
 ```
 
 ### Docker Compose
@@ -25,7 +25,7 @@ This is an example service definition that could be put in `docker-compose.yml`.
 
 ```yml
   youtube-dl:
-    image: "kmb32123/youtube-dl-server"
+    image: "kalioz/youtube-dl-server:2.1.1"
     network_mode: "service:vpn"
     volumes:
       - /home/core/youtube-dl:/youtube-dl
