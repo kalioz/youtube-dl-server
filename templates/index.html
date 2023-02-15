@@ -86,6 +86,7 @@
             </button>
           </div>
         </form>
+        <table class="table table-striped mt-3 bg-light rounded" id="history"></table>
       </main>
       <footer class="mt-auto text-muted">
         <div id="liveAlertPlaceholder"></div>
@@ -130,7 +131,91 @@
             '>one item</a> to the download queue',
           'success',
         );
+        fetch_history()
       }
+
+      /**
+       * @param {Array} download_history - The download history
+       */
+      function update_history(download_history) {
+        const table = document.querySelector('#history')
+        // clean table
+        table.replaceChildren()
+        
+        if (download_history.length == 0) {
+          return
+        }
+
+        // header
+        let thead = table.createTHead();
+        let row = thead.insertRow();
+        data = ["url", "status", "completion"]
+        for (let key of data) {
+          let th = document.createElement("th");
+          let text = document.createTextNode(key);
+          th.appendChild(text);
+          row.appendChild(th);
+        }
+
+        // lines
+        let tbody = table.createTBody()
+        for (let download of download_history.reverse()) {
+          let row = tbody.insertRow();
+
+          let completion_percent = 0
+          if (download["status"] == "finished") {
+            completion_percent = 100
+          } else {
+            if (Object.keys(download['status_files']).length > 0) {
+              completion_percent = 9999
+            }
+            for (let file in download['status_files']){
+              if (completion_percent == 9999) {
+                completion_percent = parseFloat(download['status_files'][file]['_percent_str'])
+              }
+              completion_percent = Math.min(
+                parseFloat(download['status_files'][file]['_percent_str']), 
+                completion_percent
+              )
+            }
+          } 
+          
+          data = ["url", "status"]
+          for (let key of data) {
+            let th = document.createElement("th");
+            let content = download[key]
+            if (key == "status" && content == "downloading" && completion_percent == 100) {
+              content = "post-processing"
+            }
+            let text = document.createTextNode(content);
+            th.appendChild(text);
+            row.appendChild(th);
+          }
+
+          let th = document.createElement("th");
+          let text = document.createTextNode(completion_percent + " %");
+          th.appendChild(text);
+          row.appendChild(th);
+
+        }
+      }
+
+      function fetch_history() {
+        fetch('/youtube-dl/history').then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! ${response.status}`);
+          }
+          return response.json()
+        })
+        .then((json) => update_history(json))
+        .catch((error) => {
+          alert("Failed to fetch history :" + error + " - autosync disabled.", "warning")
+          clearInterval(fetch_history_interval)
+        })
+      }
+
+      var fetch_history_interval = setInterval(fetch_history, 2000)
+
     </script>
   </body>
 </html>

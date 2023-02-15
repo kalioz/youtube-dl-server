@@ -152,19 +152,41 @@ def get_ydl_options(request_options):
         "allsubtitles": True
     }
 
+DOWNLOAD_HISTORY = []
 
 def download(url, request_options):
     opts = get_ydl_options(request_options)
     print(f"downloading {url} with options {opts}")
+
+    # add a progress hook to track the download
+    files_downloaded = {}
+    def download_progress_hook(d):
+        files_downloaded[d['filename']] = d
+    
+    opts["progress_hooks"] = [download_progress_hook]
+
     with YoutubeDL(opts) as ydl:
+        status_object = {"url": url, "request_options": request_options, "status_files": files_downloaded, "status": "downloading"}
+        DOWNLOAD_HISTORY.append(status_object)
+
         ydl.download([url])
 
+        if all(value['status'] == "finished" for _, value in files_downloaded.items()):
+            status_object["status"] = "finished" 
+            del(status_object["status_files"])
+        else:
+            status_object["status"] = "error"
+
+
+def get_history(request):
+    return JSONResponse(DOWNLOAD_HISTORY)
 
 routes = [
     Route("/", endpoint=redirect),
     Route("/youtube-dl", endpoint=dl_queue_list),
     Route("/youtube-dl/q", endpoint=q_put, methods=["POST"]),
     Route("/youtube-dl/update", endpoint=update_route, methods=["PUT"]),
+    Route("/youtube-dl/history", endpoint=get_history)
 ]
 
 app = Starlette(debug=True, routes=routes)
